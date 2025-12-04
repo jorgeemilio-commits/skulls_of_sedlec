@@ -29,7 +29,8 @@ Map<String, int> contarCaracteres(List<List<String>> matriz) {
 // LÓGICA DE PRE-PUNTUACIÓN (ANULACIÓN/VOLTEO)
 // =======================================================
 
-/// Cuenta los Criminales ('P') adyacentes a la posición (i, j).
+/// Cuenta los Criminales ('P') adyacentes a la posición (i, j), 
+/// saltando columnas visuales (los separadores '_') para la adyacencia horizontal.
 int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   int count = 0;
   if (matriz.isEmpty || matriz[0].isEmpty) return 0;
@@ -55,6 +56,8 @@ int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   return count;
 }
 
+/// Pre-procesa la matriz volteando (haciendo '_') las dos filas 
+/// de cualquier carta que contenga un Noble ('R') adyacente a >= 2 Criminales ('P').
 List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
   if (matriz.isEmpty || matriz[0].isEmpty) {
     return [];
@@ -98,7 +101,7 @@ List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
 // LÓGICA ESPECÍFICA DE PUNTUACIÓN POR CARTA
 // =======================================================
 
-/// Punto por cada Noble (R) o Campesino (C) en cualquier posición de un nivel inferior.
+/// Calcula los puntos de un Noble ('R').
 int _puntuarNoble(List<List<String>> matrizPuntuacion, int fila, int col) {
   int puntos = 0;
   int numFilas = matrizPuntuacion.length;
@@ -115,7 +118,7 @@ int _puntuarNoble(List<List<String>> matrizPuntuacion, int fila, int col) {
   return puntos;
 }
 
-/// Calcula los puntos de un Campesino ('C') basado en su posición relativa a todos los Nobles ('R').
+/// Calcula los puntos de un Campesino ('C').
 int _puntuarCampesino(List<List<String>> matrizPuntuacion, int c_row, int c_col) {
   int numFilas = matrizPuntuacion.length;
   int numColumnas = matrizPuntuacion[0].length;
@@ -123,7 +126,6 @@ int _puntuarCampesino(List<List<String>> matrizPuntuacion, int c_row, int c_col)
   for (int r_row = 0; r_row < numFilas; r_row++) {
     for (int r_col = 0; r_col < numColumnas; r_col++) {
       if (matrizPuntuacion[r_row][r_col] == 'R') {
-        
         if (c_row >= r_row) {
           return 0; // El campesino está al mismo nivel o debajo del Rey
         }
@@ -159,12 +161,42 @@ bool _verificarAdyacenciaSacerdote(List<List<String>> matrizPuntuacion, int i, i
 }
 
 /// Calcula los puntos de un Criminal ('P').
-/// Regla: 2 Puntos por cada Criminal adyacente a al menos un Sacerdote ('S').
 int _puntuarCriminal(List<List<String>> matrizPuntuacion, int i, int j) {
   if (_verificarAdyacenciaSacerdote(matrizPuntuacion, i, j)) {
     return 2;
   }
   return 0;
+}
+
+/// Busca un Enamorado adyacente no emparejado.
+/// Devuelve la coordenada del compañero ([r, c]) si se encuentra, o null.
+List<int>? _verificarYEmparejarEnamorado(List<List<String>> matrizPuntuacion, int i, int j, Set<String> emparejados) {
+  int numFilas = matrizPuntuacion.length;
+  int numColumnas = matrizPuntuacion[0].length;
+  
+  // Movimientos 8-way (Vertical, Horizontal y Diagonal, saltando separadores)
+  final adyacentes = [
+    [-1, 0], [1, 0], [0, -2], [0, 2], // Ortogonal
+    [-1, -2], [-1, 2], [1, -2], [1, 2], // Diagonal
+  ];
+
+  for (final mov in adyacentes) {
+    int ni = i + mov[0];
+    int nj = j + mov[1];
+
+    if (ni >= 0 && ni < numFilas && nj >= 0 && nj < numColumnas) {
+      // Clave para evitar doble conteo y auto-emparejamiento
+      String claveVecino = '$ni,$nj';
+      String clavePropia = '$i,$j';
+
+      if (matrizPuntuacion[ni][nj] == 'E' && 
+          !emparejados.contains(claveVecino) &&
+          !emparejados.contains(clavePropia)) {
+        return [ni, nj]; // Devuelve la coordenada del compañero
+      }
+    }
+  }
+  return null;
 }
 
 // =======================================================
@@ -174,16 +206,14 @@ int _puntuarCriminal(List<List<String>> matrizPuntuacion, int i, int j) {
 /// Calcula la puntuación total y la desglosa por tipo de carta.
 Map<String, int> calcularDesglosePuntuacion(List<List<String>> matriz) {
   if (matriz.isEmpty || matriz[0].isEmpty) {
-    return {'R': 0, 'C': 0, 'S': 0, 'P': 0, 'Total': 0};
+    return {'R': 0, 'C': 0, 'S': 0, 'P': 0, 'E': 0, 'Total': 0};
   }
   
   List<List<String>> matrizPuntuacion = prepararMatrizParaPuntuacion(matriz);
   
-  // Inicializa el desglose, incluyendo al Criminal
-  Map<String, int> desglose = {'R': 0, 'C': 0, 'S': 0, 'P': 0};
-  
-  // Set para rastrear las filas con Sacerdote ya puntuadas (Regla S)
-  Set<int> filasSacerdotePuntuadas = {}; 
+  Map<String, int> desglose = {'R': 0, 'C': 0, 'S': 0, 'P': 0, 'E': 0};
+  Set<int> filasSacerdotePuntuadas = {}; // Para regla 'S'
+  Set<String> enamoradosEmparejados = HashSet<String>(); // Para regla 'E'
   
   int numFilas = matrizPuntuacion.length;
   int numColumnas = matrizPuntuacion[0].length;
@@ -202,7 +232,6 @@ Map<String, int> calcularDesglosePuntuacion(List<List<String>> matriz) {
           desglose['C'] = (desglose['C'] ?? 0) + puntos;
           break;
         case 'S':
-          // Regla del Sacerdote: 2 puntos por fila si no ha sido contada
           if (!filasSacerdotePuntuadas.contains(i)) {
             desglose['S'] = (desglose['S'] ?? 0) + 2;
             filasSacerdotePuntuadas.add(i);
@@ -212,13 +241,28 @@ Map<String, int> calcularDesglosePuntuacion(List<List<String>> matriz) {
           int puntos = _puntuarCriminal(matrizPuntuacion, i, j);
           desglose['P'] = (desglose['P'] ?? 0) + puntos;
           break;
+        case 'E':
+          // Solo intenta emparejar si no ha sido emparejado antes
+          String claveActual = '$i,$j';
+          if (!enamoradosEmparejados.contains(claveActual)) {
+            
+            List<int>? companero = _verificarYEmparejarEnamorado(matrizPuntuacion, i, j, enamoradosEmparejados);
+            
+            if (companero != null) {
+              // Se encontró un compañero, puntúa 6 y marca ambos
+              desglose['E'] = (desglose['E'] ?? 0) + 6;
+              enamoradosEmparejados.add(claveActual);
+              enamoradosEmparejados.add('${companero[0]},${companero[1]}');
+            }
+          }
+          break;
         default:
           break;
       }
     }
   }
 
-  int total = (desglose['R'] ?? 0) + (desglose['C'] ?? 0) + (desglose['S'] ?? 0) + (desglose['P'] ?? 0);
+  int total = (desglose['R'] ?? 0) + (desglose['C'] ?? 0) + (desglose['S'] ?? 0) + (desglose['P'] ?? 0) + (desglose['E'] ?? 0);
   desglose['Total'] = total;
   return desglose;
 }
