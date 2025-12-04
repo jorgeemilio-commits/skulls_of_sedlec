@@ -27,17 +27,16 @@ Map<String, int> contarCaracteres(List<List<String>> matriz) {
 
 // =======================================================
 // LÓGICA DE PRE-PUNTUACIÓN (ANULACIÓN/VOLTEO)
+// ... (_contarCriminalesAdyacentes y prepararMatrizParaPuntuacion quedan sin cambios)
 // =======================================================
 
-/// Cuenta los Criminales ('P') adyacentes a la posición (i, j), 
-/// saltando columnas visuales (los separadores '_') para la adyacencia horizontal.
 int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   int count = 0;
   if (matriz.isEmpty || matriz[0].isEmpty) return 0;
   int numFilas = matriz.length;
   int numColumnas = matriz[0].length;
   
-  // Movimientos corregidos: Verticales directos y Horizontales saltando el separador.
+  // Movimientos: Verticales directos y Horizontales saltando el separador.
   final adyacentes = [
     [-1, 0], [1, 0], // Vertical
     [0, -2], [0, 2], // Horizontal (saltando separador)
@@ -56,8 +55,6 @@ int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   return count;
 }
 
-/// Pre-procesa la matriz volteando (haciendo '_') las dos filas 
-/// de cualquier carta que contenga un Noble ('R') adyacente a >= 2 Criminales ('P').
 List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
   if (matriz.isEmpty || matriz[0].isEmpty) {
     return [];
@@ -101,7 +98,8 @@ List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
 // LÓGICA ESPECÍFICA DE PUNTUACIÓN POR CARTA
 // =======================================================
 
-/// Calcula los puntos de un Noble ('R') ubicado en (fila, col).
+/// Punto por cada Noble (R) o Campesino (C) en cualquier posición
+/// de un nivel inferior.
 int _puntuarNoble(List<List<String>> matrizPuntuacion, int fila, int col) {
   int puntos = 0;
   int numFilas = matrizPuntuacion.length;
@@ -118,10 +116,28 @@ int _puntuarNoble(List<List<String>> matrizPuntuacion, int fila, int col) {
   return puntos;
 }
 
-/// Calcula los puntos de un Campesino ('C').
-/// Regla: 1 Punto por cada Campesino.
-int _puntuarCampesino(List<List<String>> matrizPuntuacion, int fila, int col) {
-  return 1;
+/// Calcula los puntos de un Campesino ('C') basado en su posición relativa a todos los Nobles ('R').
+/// Regla 1: Si el Campesino está al mismo nivel o debajo de CUALQUIER Rey (c_row >= r_row), puntúa 0.
+/// Regla 2: Si el Campesino está a un nivel más alto que TODOS los Reyes (c_row < r_row para todos), puntúa 2.
+int _puntuarCampesino(List<List<String>> matrizPuntuacion, int c_row, int c_col) {
+  int numFilas = matrizPuntuacion.length;
+  int numColumnas = matrizPuntuacion[0].length;
+  
+  // Buscar a todos los Nobles ('R') restantes en la matriz
+  for (int r_row = 0; r_row < numFilas; r_row++) {
+    for (int r_col = 0; r_col < numColumnas; r_col++) {
+      if (matrizPuntuacion[r_row][r_col] == 'R') {
+        
+        // Si el Campesino está en la misma fila (mismo nivel) o debajo de CUALQUIER Noble.
+        if (c_row >= r_row) {
+          return 0; // Precedencia a la condición de 0 puntos
+        }
+      }
+    }
+  }
+  
+  // Si el código llega aquí, el Campesino está a un nivel más alto que TODOS los Nobles restantes.
+  return 2;
 }
 
 

@@ -77,15 +77,15 @@ void main() {
 test('Escenario 4: Matriz Compleja (Noble y Campesino)', () {
 
       final matriz = [
-      ['_', '_', 'R', '_', 'P', '_', '_'],
-      ['_', '_', 'S', '_', 'E', '_', '_'],
+      ['_', '_', 'C', '_', 'P', '_', '_'],
+      ['_', '_', 'S', '_', 'C', '_', '_'],
       ['_', 'P', '_', 'P', '_', 'S', '_'], 
       ['_', 'S', '_', 'R', '_', 'S', '_'],
       ['R', '_', 'C', '_', 'C', '_', 'P'],
       ['E', '_', 'P', '_', 'E', '_', 'E'],
       ]; 
 
-      const expectedScore = 9; 
+      const expectedScore = 7; 
       
       final desglose = calcularDesglosePuntuacion(matriz);
       final puntuacionCalculada = desglose['Total'] ?? 0;
