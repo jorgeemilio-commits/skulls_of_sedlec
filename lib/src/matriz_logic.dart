@@ -23,21 +23,27 @@ Map<String, int> contarCaracteres(List<List<String>> matriz) {
 }
 
 
-/// Cuenta los Criminales ('P') adyacentes ortogonalmente a la posición (i, j).
+/// Cuenta los Criminales ('P') adyacentes a la posición (i, j), 
+/// saltando columnas visuales (los separadores '_') para la adyacencia horizontal.
 int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   int count = 0;
   int numFilas = matriz.length;
   int numColumnas = matriz[0].length;
+  
+  // MOVIMIENTOS CORREGIDOS: Verticales directos y Horizontales saltando 2 columnas.
   final adyacentes = [
-    [-1, 0], [1, 0], [0, -1], [0, 1],
+    [-1, 0], [1, 0], // Vertical: Fila arriba/abajo
+    [0, -2], [0, 2], // Horizontal: Columna de carta adyacente (saltando separador)
   ];
 
   for (final mov in adyacentes) {
-    int ni = i + mov[0];
-    int nj = j + mov[1];
+    int ni = i + mov[0]; // Nueva fila
+    int nj = j + mov[1]; // Nueva columna
 
+    // CHEQUEO DE LÍMITES (evita out of bounds)
     if (ni >= 0 && ni < numFilas && nj >= 0 && nj < numColumnas) {
-      if (matriz[ni][nj] == 'P') {
+      // Solo se cuenta si el carácter es 'P'.
+      if (matriz[ni][nj] == 'P') { 
         count++;
       }
     }
@@ -140,7 +146,7 @@ int calcularPuntuacionTotal(List<List<String>> matriz) {
           puntuacionTotal += _puntuarNoble(matrizPuntuacion, i, j);
           break;
         default:
-          // No hace nada para '_'
+          // Solo puntúa R por ahora
           break;
       }
     }
