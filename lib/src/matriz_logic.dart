@@ -1,9 +1,9 @@
 // lib/src/matriz_logic.dart
 
 List<List<String>> obtenerMatriz() {
-  // Matriz corregida y definitiva
+  // La matriz corregida y definitiva para los cálculos
   return [
-    ['_', '_', 'R', '_', 'R', '_', '_'],
+    ['_', '_', 'R', '_', 'P', '_', '_'],
     ['_', '_', 'S', '_', 'E', '_', '_'],
     ['_', 'P', '_', 'P', '_', 'S', '_'],
     ['_', 'S', '_', 'R', '_', 'P', '_'],
@@ -22,37 +22,126 @@ Map<String, int> contarCaracteres(List<List<String>> matriz) {
   return contador;
 }
 
-/// Calcula la puntuación total generada por todos los Nobles (R) en la matriz.
-/// 
-/// Regla Confirmada: 1 Punto por cada Noble (R) o Campesino (C) que se encuentre 
-/// en una fila inferior (nivel inferior) en CUALQUIER columna.
-int calcularPuntuacionNoble(List<List<String>> matriz) {
-  int puntuacionTotal = 0;
-  int numFilas = matriz.length;
-  
-  if (numFilas == 0) {
-    return 0;
-  }
-  
-  int numColumnas = matriz[0].length;
 
-  // Recorre la matriz para encontrar a cada Noble (R)
-  for (int i = 0; i < numFilas; i++) { // i = fila 
-    for (int j = 0; j < numColumnas; j++) { // j = columna 
-      
-      // 1. Identifica si la calavera actual es un Noble ('R')
-      if (matriz[i][j] == 'R') {
-        // 2. Itera por las filas inferiores 
-        for (int k = i + 1; k < numFilas; k++) { // k = fila inferior
-          // 3. Itera por TODAS las columnas (l) en la fila inferior (k)
-          for (int l = 0; l < numColumnas; l++) { // l = columna de la calavera objetivo
-            String caracterDebajo = matriz[k][l];
-            // 4. Si el carácter es Noble ('R') o Campesino ('C'), suma un punto
-            if (caracterDebajo == 'R' || caracterDebajo == 'C') {
-              puntuacionTotal += 1;
-            }
+/// Cuenta los Criminales ('P') adyacentes ortogonalmente a la posición (i, j).
+int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
+  int count = 0;
+  int numFilas = matriz.length;
+  int numColumnas = matriz[0].length;
+  final adyacentes = [
+    [-1, 0], [1, 0], [0, -1], [0, 1],
+  ];
+
+  for (final mov in adyacentes) {
+    int ni = i + mov[0];
+    int nj = j + mov[1];
+
+    if (ni >= 0 && ni < numFilas && nj >= 0 && nj < numColumnas) {
+      if (matriz[ni][nj] == 'P') {
+        count++;
+      }
+    }
+  }
+  return count;
+}
+
+/// Pre-procesa la matriz volteando (haciendo '_') las dos filas 
+/// de cualquier carta que contenga un Noble ('R') adyacente a >= 2 Criminales ('P').
+List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
+  // Clonar la matriz para modificarla
+  List<List<String>> matrizModificable = matriz.map((row) => List<String>.from(row)).toList();
+  int numFilas = matriz.length;
+  int numColumnas = matriz[0].length;
+  
+  Set<int> filasAVoltear = {}; 
+
+  for (int i = 0; i < numFilas; i++) {
+    for (int j = 0; j < numColumnas; j++) {
+      if (matrizModificable[i][j] == 'R') {
+        
+        int criminalesAdyacentes = _contarCriminalesAdyacentes(matrizModificable, i, j);
+        
+        if (criminalesAdyacentes >= 2) {
+          // Si cumple la condición de volteo, identificar las dos filas de la carta.
+          int filaSuperior = (i ~/ 2) * 2; 
+          int filaInferior = filaSuperior + 1;
+          
+          filasAVoltear.add(filaSuperior);
+          if (filaInferior < numFilas) {
+            filasAVoltear.add(filaInferior);
           }
         }
+      }
+    }
+  }
+
+  // Ejecutar el volteo (flip)
+  for (int i = 0; i < numFilas; i++) {
+    if (filasAVoltear.contains(i)) {
+      for (int j = 0; j < numColumnas; j++) {
+        matrizModificable[i][j] = '_';
+      }
+    }
+  }
+
+  return matrizModificable;
+}
+
+// =======================================================
+// LÓGICA DE PUNTUACIÓN DE REYES O NOBLES
+// =======================================================
+
+/// Punto por cada Noble (R) o Campesino (C) en cualquier posición
+/// de un nivel inferior.
+int _puntuarNoble(List<List<String>> matrizPuntuacion, int fila, int col) {
+  int puntos = 0;
+  int numFilas = matrizPuntuacion.length;
+  int numColumnas = matrizPuntuacion[0].length;
+  
+  // Itera por las filas inferiores (k)
+  for (int k = fila + 1; k < numFilas; k++) { 
+    
+    // Itera por TODAS las columnas (l) en la fila inferior (k)
+    for (int l = 0; l < numColumnas; l++) { 
+      String caracterDebajo = matrizPuntuacion[k][l];
+      
+      if (caracterDebajo == 'R' || caracterDebajo == 'C') {
+        puntos += 1;
+      }
+    }
+  }
+  return puntos;
+}
+
+
+// =======================================================
+// FUNCIÓN DE PUNTUACIÓN
+// =======================================================
+
+int calcularPuntuacionTotal(List<List<String>> matriz) {
+  // Aplica las anulaciones primero
+  List<List<String>> matrizPuntuacion = prepararMatrizParaPuntuacion(matriz);
+  
+  int puntuacionTotal = 0;
+  int numFilas = matrizPuntuacion.length;
+  
+  if (numFilas == 0) return 0;
+  
+  int numColumnas = matrizPuntuacion[0].length;
+
+  // Recorre la matrizPuntuacion para encontrar cada calavera puntuable
+  for (int i = 0; i < numFilas; i++) { 
+    for (int j = 0; j < numColumnas; j++) {
+      String caracter = matrizPuntuacion[i][j];
+      
+      switch (caracter) {
+        case 'R':
+          // Puntuación del Noble (R)
+          puntuacionTotal += _puntuarNoble(matrizPuntuacion, i, j);
+          break;
+        default:
+          // No hace nada para '_'
+          break;
       }
     }
   }

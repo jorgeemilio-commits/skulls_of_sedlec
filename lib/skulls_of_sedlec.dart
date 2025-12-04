@@ -4,5 +4,6 @@
 library;
 
 export 'src/skulls_of_sedlec_base.dart';
+export 'src/matriz_logic.dart';
 
 // TODO: Export any libraries intended for clients of this package.

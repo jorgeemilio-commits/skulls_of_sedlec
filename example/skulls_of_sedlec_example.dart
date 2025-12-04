@@ -1,21 +1,24 @@
+// example/skulls_of_sedlec_example.dart
 
-import 'package:skulls_of_sedlec/src/matriz_logic.dart'; 
+import 'package:skulls_of_sedlec/skulls_of_sedlec.dart';
 
 void main() {
-  // 1. Obtener la matriz
+  // Las funciones obtenidas a través del export
   final matriz = obtenerMatriz();
+  
+  // Usamos el nombre de la función refactorizada
+  final puntuacionTotal = calcularPuntuacionTotal(matriz); 
+  
+  final conteo = contarCaracteres(matriz);
+
   print('--- Matriz de Pila ---');
   for (var fila in matriz) {
     print(fila.join(' '));
   }
   
-  // 2. Calcular y mostrar la puntuación del Noble (R)
-  final puntuacionNoble = calcularPuntuacionNoble(matriz);
-  print('\n--- Puntuación ---');
-  print('Puntuación Noble (R): $puntuacionNoble puntos'); 
+  print('\n--- Puntuación Total ---');
+  print('Puntuación Total (incluye Noble R): $puntuacionTotal puntos'); 
 
-  // 3. Mostrar el conteo de caracteres
-  final conteo = contarCaracteres(matriz);
   print('\n--- Conteo de Caracteres ---');
   print(conteo);
 }
