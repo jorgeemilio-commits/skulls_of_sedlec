@@ -27,9 +27,10 @@ Map<String, int> contarCaracteres(List<List<String>> matriz) {
 
 // =======================================================
 // LÓGICA DE PRE-PUNTUACIÓN (ANULACIÓN/VOLTEO)
-// ... (_contarCriminalesAdyacentes y prepararMatrizParaPuntuacion quedan sin cambios)
 // =======================================================
 
+/// Cuenta los Criminales ('P') adyacentes a la posición (i, j), 
+/// saltando columnas visuales (los separadores '_') para la adyacencia horizontal.
 int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   int count = 0;
   if (matriz.isEmpty || matriz[0].isEmpty) return 0;
@@ -55,6 +56,8 @@ int _contarCriminalesAdyacentes(List<List<String>> matriz, int i, int j) {
   return count;
 }
 
+/// Pre-procesa la matriz volteando (haciendo '_') las dos filas 
+/// de cualquier carta que contenga un Noble ('R') adyacente a >= 2 Criminales ('P').
 List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
   if (matriz.isEmpty || matriz[0].isEmpty) {
     return [];
@@ -98,8 +101,7 @@ List<List<String>> prepararMatrizParaPuntuacion(List<List<String>> matriz) {
 // LÓGICA ESPECÍFICA DE PUNTUACIÓN POR CARTA
 // =======================================================
 
-/// Punto por cada Noble (R) o Campesino (C) en cualquier posición
-/// de un nivel inferior.
+/// Calcula los puntos de un Noble ('R') ubicado en (fila, col).
 int _puntuarNoble(List<List<String>> matrizPuntuacion, int fila, int col) {
   int puntos = 0;
   int numFilas = matrizPuntuacion.length;
@@ -123,12 +125,10 @@ int _puntuarCampesino(List<List<String>> matrizPuntuacion, int c_row, int c_col)
   int numFilas = matrizPuntuacion.length;
   int numColumnas = matrizPuntuacion[0].length;
   
-  // Buscar a todos los Nobles ('R') restantes en la matriz
   for (int r_row = 0; r_row < numFilas; r_row++) {
     for (int r_col = 0; r_col < numColumnas; r_col++) {
       if (matrizPuntuacion[r_row][r_col] == 'R') {
         
-        // Si el Campesino está en la misma fila (mismo nivel) o debajo de CUALQUIER Noble.
         if (c_row >= r_row) {
           return 0; // Precedencia a la condición de 0 puntos
         }
@@ -136,7 +136,6 @@ int _puntuarCampesino(List<List<String>> matrizPuntuacion, int c_row, int c_col)
     }
   }
   
-  // Si el código llega aquí, el Campesino está a un nivel más alto que TODOS los Nobles restantes.
   return 2;
 }
 
@@ -148,12 +147,17 @@ int _puntuarCampesino(List<List<String>> matrizPuntuacion, int c_row, int c_col)
 /// Calcula la puntuación total y la desglosa por tipo de carta.
 Map<String, int> calcularDesglosePuntuacion(List<List<String>> matriz) {
   if (matriz.isEmpty || matriz[0].isEmpty) {
-    return {'R': 0, 'C': 0, 'Total': 0};
+    return {'R': 0, 'C': 0, 'S': 0, 'Total': 0};
   }
   
   List<List<String>> matrizPuntuacion = prepararMatrizParaPuntuacion(matriz);
   
-  Map<String, int> desglose = {'R': 0, 'C': 0};
+  // Inicializa el desglose, incluyendo el Sacerdote
+  Map<String, int> desglose = {'R': 0, 'C': 0, 'S': 0};
+  
+  // Set para rastrear las filas con Sacerdote ya puntuadas (Regla S)
+  Set<int> filasSacerdotePuntuadas = {}; 
+  
   int numFilas = matrizPuntuacion.length;
   int numColumnas = matrizPuntuacion[0].length;
 
@@ -170,13 +174,20 @@ Map<String, int> calcularDesglosePuntuacion(List<List<String>> matriz) {
           int puntos = _puntuarCampesino(matrizPuntuacion, i, j);
           desglose['C'] = (desglose['C'] ?? 0) + puntos;
           break;
+        case 'S':
+          // Regla del Sacerdote: 2 puntos por fila si no ha sido contada
+          if (!filasSacerdotePuntuadas.contains(i)) {
+            desglose['S'] = (desglose['S'] ?? 0) + 2;
+            filasSacerdotePuntuadas.add(i);
+          }
+          break;
         default:
           break;
       }
     }
   }
 
-  int total = (desglose['R'] ?? 0) + (desglose['C'] ?? 0);
+  int total = (desglose['R'] ?? 0) + (desglose['C'] ?? 0) + (desglose['S'] ?? 0);
   desglose['Total'] = total;
   return desglose;
 }

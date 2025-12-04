@@ -56,21 +56,31 @@ void main() {
  test('Escenario 3: Rey Muerto', () {
 
       final matriz = [
-      ['_', '_', 'R', '_', 'P', '_', '_'],
+      ['_', '_', 'S', '_', 'P', '_', '_'],
       ['_', '_', 'S', '_', 'E', '_', '_'],
       ['_', 'P', '_', 'P', '_', 'S', '_'],
-      ['_', 'S', '_', 'R', '_', 'P', '_'],
-      ['R', '_', 'C', '_', 'C', '_', 'P'],
-      ['E', '_', 'P', '_', 'E', '_', 'E'],
+      ['_', 'P', '_', 'R', '_', 'S', '_'],
+      ['R', '_', 'C', '_', 'S', '_', 'P'],
+      ['E', '_', 'P', '_', 'S', '_', 'S'],
       ]; 
       
       const expectedScore = 3; 
       final puntuacion = calcularPuntuacionTotal(matriz);
-      
+      final desglose = calcularDesglosePuntuacion(matriz);
+      final puntuacionCalculada = desglose['Total'] ?? 0;
+
       printMatriz(matriz, 'Escenario 3');
       print('Resultado Calculado: $puntuacion');
       print('Resultado Esperado: $expectedScore');
-      
+            print('--- Desglose Calculado ---');
+      print('Noble (R): ${desglose['R']}');
+      print('Campesino (C): ${desglose['C']}');
+      print('Sacerdote (S): ${desglose['S']}');
+      print('Resultado Calculado (Total): $puntuacionCalculada');
+      print('Resultado Esperado: $expectedScore');
+      print('--------------------------');
+
+
       expect(puntuacion, equals(expectedScore)); 
     });
 
@@ -85,7 +95,7 @@ test('Escenario 4: Matriz Compleja (Noble y Campesino)', () {
       ['E', '_', 'P', '_', 'E', '_', 'E'],
       ]; 
 
-      const expectedScore = 7; 
+      const expectedScore = 13; 
       
       final desglose = calcularDesglosePuntuacion(matriz);
       final puntuacionCalculada = desglose['Total'] ?? 0;
@@ -94,6 +104,7 @@ test('Escenario 4: Matriz Compleja (Noble y Campesino)', () {
       print('--- Desglose Calculado ---');
       print('Noble (R): ${desglose['R']}');
       print('Campesino (C): ${desglose['C']}');
+      print('Sacerdote (S): ${desglose['S']}');
       print('Resultado Calculado (Total): $puntuacionCalculada');
       print('Resultado Esperado: $expectedScore');
       print('--------------------------');
