@@ -74,6 +74,32 @@ void main() {
       expect(puntuacion, equals(expectedScore)); 
     });
 
+test('Escenario 4: Matriz Compleja (Noble y Campesino)', () {
+
+      final matriz = [
+      ['_', '_', 'R', '_', 'P', '_', '_'],
+      ['_', '_', 'S', '_', 'E', '_', '_'],
+      ['_', 'P', '_', 'P', '_', 'S', '_'], 
+      ['_', 'S', '_', 'R', '_', 'S', '_'],
+      ['R', '_', 'C', '_', 'C', '_', 'P'],
+      ['E', '_', 'P', '_', 'E', '_', 'E'],
+      ]; 
+
+      const expectedScore = 9; 
+      
+      final desglose = calcularDesglosePuntuacion(matriz);
+      final puntuacionCalculada = desglose['Total'] ?? 0;
+
+      printMatriz(matriz, 'Escenario 2');
+      print('--- Desglose Calculado ---');
+      print('Noble (R): ${desglose['R']}');
+      print('Campesino (C): ${desglose['C']}');
+      print('Resultado Calculado (Total): $puntuacionCalculada');
+      print('Resultado Esperado: $expectedScore');
+      print('--------------------------');
+      
+      expect(puntuacionCalculada, equals(expectedScore)); 
+    });
 
   });
 }
